@@ -54,8 +54,8 @@ def page_index_factory(language_code, proxy_model):
         text = indexes.CharField(document=True, use_template=False)
         pub_date = indexes.DateTimeField(model_attr='publication_date', null=True)
         login_required = indexes.BooleanField(model_attr='login_required')
-        url = indexes.CharField(stored=True, indexed=False, model_attr='get_absolute_url')
-        title = indexes.CharField(stored=True, indexed=False, model_attr='get_title')
+        url = indexes.CharField(stored=True, indexed=True, model_attr='get_absolute_url')
+        title = indexes.CharField(stored=True, indexed=True, model_attr='get_title')
         site_id = indexes.IntegerField(stored=True, indexed=True, model_attr='site_id')
 
         def prepare(self, obj):
@@ -67,12 +67,17 @@ def page_index_factory(language_code, proxy_model):
                 self.prepared_data = super(_PageIndex, self).prepare(obj)
                 plugins = CMSPlugin.objects.filter(language=language_code, placeholder__in=obj.placeholders.all())
                 text = ''
+                # hack to include additional page fields into text index
+                text += obj.get_title()
+                text += obj.get_absolute_url()
+                text += obj.get_menu_title()    
                 for plugin in plugins:
                     instance, _ = plugin.get_plugin_instance()
                     if hasattr(instance, 'search_fields'):
                         text += u''.join(force_unicode(_strip_tags(getattr(instance, field, ''))) for field in instance.search_fields)
                     if getattr(instance, 'search_fulltext', False):
                         text += _strip_tags(instance.render_plugin(context=RequestContext(request)))
+                                
                 self.prepared_data['text'] = text
                 return self.prepared_data
             finally:
