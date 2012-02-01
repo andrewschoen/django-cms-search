@@ -70,7 +70,11 @@ def page_index_factory(language_code, proxy_model):
                 # hack to include additional page fields into text index
                 text += obj.get_title()
                 text += obj.get_absolute_url()
-                text += obj.get_menu_title()    
+                text += obj.get_menu_title() 
+                if obj.get_meta_keywords():
+                    text += obj.get_meta_keywords()
+                if obj.get_meta_description():
+                    text += obj.get_meta_description()   
                 for plugin in plugins:
                     instance, _ = plugin.get_plugin_instance()
                     if hasattr(instance, 'search_fields'):
